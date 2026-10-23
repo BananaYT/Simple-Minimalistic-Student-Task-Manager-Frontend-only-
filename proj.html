@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Student Task Manager: plan, search and track your study tasks.">
+<title>Student Task Manager</title>
+<link rel="stylesheet" href="proj.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script defer src="proj.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+      <span class="brand-name">Student Task Manager</span>
+    </div>
+    <p class="today" id="todayLabel"></p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="hero-text">
+      <h1>Plan your study week</h1>
+      <p id="motivation" class="muted" aria-live="polite"></p>
+      <button type="button" class="btn btn-primary btn-lg" id="addTaskBtn" data-tilt>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add task
+      </button>
+    </div>
+    <canvas id="orb" class="orb" width="160" height="160" aria-hidden="true"></canvas>
+  </section>
+
+  <section class="stats" aria-label="Task statistics">
+    <article class="card stat" data-tilt><p class="stat-label">Total</p><p class="stat-value" id="statTotal">0</p></article>
+    <article class="card stat" data-tilt><p class="stat-label">Pending</p><p class="stat-value" id="statPending">0</p></article>
+    <article class="card stat" data-tilt><p class="stat-label">Completed</p><p class="stat-value" id="statDone">0</p></article>
+    <article class="card stat stat-overdue" data-tilt><p class="stat-label">Overdue</p><p class="stat-value" id="statOverdue">0</p></article>
+  </section>
+
+  <section class="card progress" aria-label="Overall progress">
+    <div class="progress-head"><span>Progress</span><strong id="progressText">0%</strong></div>
+    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar"><span id="progressFill"></span></div>
+  </section>
+
+  <section class="toolbar" aria-label="Search and filter">
+    <label class="search">
+      <span class="sr-only">Search tasks</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+      <input type="search" id="searchInput" placeholder="Search title, description or category" autocomplete="off">
+    </label>
+    <div class="tabs" role="group" aria-label="Filter by status">
+      <button type="button" class="tab is-active" data-filter="all" aria-pressed="true">All <span class="count" id="countAll">0</span></button>
+      <button type="button" class="tab" data-filter="pending" aria-pressed="false">Pending <span class="count" id="countPending">0</span></button>
+      <button type="button" class="tab" data-filter="completed" aria-pressed="false">Completed <span class="count" id="countCompleted">0</span></button>
+    </div>
+    <button type="button" class="btn btn-ghost" id="clearCompletedBtn">Clear completed</button>
+  </section>
+
+  <ul class="tasks" id="taskList" aria-label="Tasks"></ul>
+
+  <div class="empty" id="emptyState" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="16" rx="3"/><path d="M9 9h6M9 13h4"/></svg>
+    <h2 id="emptyTitle">No tasks yet</h2>
+    <p class="muted" id="emptyText">Add your first task to get started.</p>
+  </div>
+</main>
+
+<footer class="wrap footer">Saved in this browser only. Tasks stay after you refresh.</footer>
+
+<dialog id="taskDialog" class="dialog" aria-labelledby="taskDialogTitle" data-tilt-dialog>
+  <form id="taskForm" novalidate>
+    <h2 id="taskDialogTitle">Add task</h2>
+    <div class="field">
+      <label for="fTitle">Title</label>
+      <input id="fTitle" name="title" type="text" maxlength="120" required autocomplete="off" placeholder="e.g. Finish physics worksheet">
+      <p class="error" id="titleError" role="alert" hidden>Enter a title for this task.</p>
+    </div>
+    <div class="field">
+      <label for="fDesc">Description <span class="muted">(optional)</span></label>
+      <textarea id="fDesc" name="description" rows="3" maxlength="500"></textarea>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="fCategory">Category</label>
+        <select id="fCategory" name="category">
+          <option>Study</option><option>Assignment</option><option>Project</option><option>Exam</option><option>Personal</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fPriority">Priority</label>
+        <select id="fPriority" name="priority"><option>Low</option><option selected>Medium</option><option>High</option></select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="fDue">Due date <span class="muted">(optional)</span></label>
+      <input id="fDue" name="dueDate" type="date">
+    </div>
+    <div class="actions">
+      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary" id="saveBtn">Add task</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="confirmDialog" class="dialog dialog-sm" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+  <h2 id="confirmTitle">Delete task?</h2>
+  <p class="muted" id="confirmText"></p>
+  <div class="actions">
+    <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+    <button type="button" class="btn btn-danger" id="confirmOk">Delete</button>
+  </div>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+</body>
+</html>
